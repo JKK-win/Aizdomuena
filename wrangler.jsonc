@@ -1,0 +1,10 @@
+{
+  // Cloudflare Workers konfigurācija — deploy notiek automātiski pēc katra
+  // git push / faila augšupielādes GitHub repo (Workers Builds).
+  "name": "aizdomuena",
+  "main": "worker.js",
+  "compatibility_date": "2025-05-01",
+  "assets": {
+    "directory": "."
+  }
+}
