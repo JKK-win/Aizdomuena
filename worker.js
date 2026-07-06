@@ -17,7 +17,7 @@
  */
 
 const ALLOWED_ORIGIN = "https://jkk-win.github.io";
-const MAX_TOKENS = 1024;      // griesti vienai atbildei
+const MAX_TOKENS = 400;       // griesti vienai atbildei (īsākas atbildes = mazāk TTS kredītu)
 const MAX_TEXT_CHARS = 3000;  // griesti TTS tekstam
 
 function corsHeaders(request) {
@@ -77,7 +77,7 @@ export default {
               parts: [{ text: String(m.content || "") }],
             })),
             generationConfig: Object.assign(
-              { maxOutputTokens: 2048 },
+              { maxOutputTokens: 600 },
               model.includes("flash") ? { thinkingConfig: { thinkingBudget: 0 } } : {}
             ),
           };
@@ -138,7 +138,8 @@ export default {
           {
             method: "POST",
             headers: { "xi-api-key": env.ELEVEN_KEY, "content-type": "application/json" },
-            body: JSON.stringify({ text, model_id: body.model_id || "eleven_v3" }),
+            /* Flash v2.5: 0.5 kredīta/rakstzīmi (2× lētāk par eleven_v3), atbalsta latviešu val. */
+            body: JSON.stringify({ text, model_id: body.model_id || "eleven_flash_v2_5" }),
           }
         );
         return passThrough(r, cors);
