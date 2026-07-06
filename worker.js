@@ -63,9 +63,39 @@ export default {
     }
 
     try {
-      /* ---- Claude ---- */
+      /* ---- AI modelis (Gemini vai Claude — pēc modeļa nosaukuma) ---- */
       if (url.pathname === "/claude" && request.method === "POST") {
         const body = await request.json();
+        const model = String(body.model || "gemini-2.5-flash");
+
+        if (model.startsWith("gemini")) {
+          if (!env.GEMINI_KEY) return json({ error: "Serverī nav GEMINI_KEY." }, 500, cors);
+          const gbody = {
+            system_instruction: { parts: [{ text: String(body.system || "") }] },
+            contents: (body.messages || []).map((m) => ({
+              role: m.role === "assistant" ? "model" : "user",
+              parts: [{ text: String(m.content || "") }],
+            })),
+            generationConfig: Object.assign(
+              { maxOutputTokens: 2048 },
+              model.includes("flash") ? { thinkingConfig: { thinkingBudget: 0 } } : {}
+            ),
+          };
+          const r = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/" + model +
+              ":generateContent?key=" + env.GEMINI_KEY,
+            { method: "POST", headers: { "content-type": "application/json" },
+              body: JSON.stringify(gbody) }
+          );
+          if (!r.ok) return passThrough(r, cors);
+          const d = await r.json();
+          const text = ((((d.candidates || [])[0] || {}).content || {}).parts || [])
+            .map((p) => p.text || "").join("");
+          /* atbilde Anthropic formātā, lai spēles kods nemainās */
+          return json({ content: [{ type: "text", text }] }, 200, cors);
+        }
+
+        if (!env.ANTHROPIC_KEY) return json({ error: "Serverī nav ANTHROPIC_KEY." }, 500, cors);
         body.max_tokens = Math.min(body.max_tokens || MAX_TOKENS, MAX_TOKENS);
         delete body.stream; // straumēšanu neatbalstām
         const r = await fetch("https://api.anthropic.com/v1/messages", {
